@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Clueless Closet</title>
+  <meta name="description" content="A digital wardrobe: snap your clothes, cut them out, mix and match outfits.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=VT323&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <h1 class="logo">Clueless <span>Closet</span></h1>
+    <nav class="tabs" role="tablist">
+      <button class="tab" data-view="closet" role="tab">Closet</button>
+      <button class="tab" data-view="match" role="tab">Match</button>
+      <button class="tab" data-view="look" role="tab">Lookbook</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- CLOSET -->
+    <section id="view-closet" class="view panel" hidden>
+      <div class="toolbar">
+        <label class="field">
+          <span>Adding to</span>
+          <select id="add-cat"></select>
+        </label>
+        <label class="field">
+          <span>Cutout</span>
+          <select id="add-method">
+            <option value="ai">Smart (AI, any background)</option>
+            <option value="plain">Simple (plain background)</option>
+            <option value="none">Keep photo as is</option>
+          </select>
+        </label>
+        <label class="btn primary file-btn">
+          + Add clothes
+          <input id="file-input" type="file" accept="image/*" multiple>
+        </label>
+      </div>
+      <p id="ai-status" class="status" hidden></p>
+      <div id="filters" class="chips"></div>
+      <div id="closet-grid" class="grid"></div>
+      <div id="closet-empty" class="empty" hidden>
+        <p class="big">Ugh, as if! Your closet is empty.</p>
+        <p>Pick a category, then add photos of your clothes. Laying them flat on a plain floor or bed gives the cleanest cutouts.</p>
+      </div>
+    </section>
+
+    <!-- MATCH -->
+    <section id="view-match" class="view" hidden>
+      <div class="computer">
+        <div class="titlebar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="title">CLOSET.EXE</span>
+        </div>
+        <div class="screen">
+          <div class="mode">
+            <button class="seg" data-mode="separates">Separates</button>
+            <button class="seg" data-mode="dress">Dress</button>
+          </div>
+          <div class="rig">
+            <div id="rig-main" class="rig-col"></div>
+            <div id="rig-side" class="rig-col side"></div>
+          </div>
+          <div class="screen-actions">
+            <button id="shuffle" class="btn pixel">Shuffle</button>
+            <input id="outfit-name" class="pixel-input" placeholder="Name this look (optional)" maxlength="60">
+            <button id="save-loved" class="btn pixel pink">Wore it &amp; loved it</button>
+            <button id="save-try" class="btn pixel">Want to try</button>
+          </div>
+          <div id="stamp" class="stamp" hidden>MATCH!</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- LOOKBOOK -->
+    <section id="view-look" class="view panel" hidden>
+      <div class="chips">
+        <button class="chip" data-look="loved">Worn &amp; loved <b id="count-loved">0</b></button>
+        <button class="chip" data-look="try">Want to try <b id="count-try">0</b></button>
+      </div>
+      <div id="look-grid" class="look-grid"></div>
+      <div id="look-empty" class="empty" hidden></div>
+      <details class="backup">
+        <summary>Backup &amp; restore</summary>
+        <p>Everything is saved in this browser only. Export a backup file now and then, or to move your closet to another device.</p>
+        <div class="row">
+          <button id="export" class="btn">Export backup</button>
+          <label class="btn file-btn">Import backup<input id="import" type="file" accept="application/json,.json"></label>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <!-- Item editor -->
+  <dialog id="item-dialog">
+    <form method="dialog" class="editor">
+      <div class="editor-img checker"><img id="ed-img" alt=""></div>
+      <div class="editor-fields">
+        <label class="field"><span>Name</span><input id="ed-name" maxlength="60" placeholder="e.g. Yellow plaid blazer"></label>
+        <label class="field"><span>Category</span><select id="ed-cat"></select></label>
+        <label class="field"><span>Notes</span><input id="ed-notes" maxlength="120" placeholder="color, brand, season..."></label>
+        <fieldset class="redo">
+          <legend>Redo the cutout</legend>
+          <div class="row">
+            <button type="button" class="btn small" data-redo="ai">Smart (AI)</button>
+            <button type="button" class="btn small" data-redo="plain">Simple</button>
+            <button type="button" class="btn small" data-redo="none">Original</button>
+          </div>
+          <label class="field tol"><span>Simple cutout strength</span><input id="ed-tol" type="range" min="10" max="120" value="45"></label>
+        </fieldset>
+        <div class="row end">
+          <button type="button" id="ed-delete" class="btn danger">Delete</button>
+          <button value="cancel" class="btn">Cancel</button>
+          <button value="save" id="ed-save" class="btn primary">Save</button>
+        </div>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
