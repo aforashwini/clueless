@@ -264,7 +264,7 @@ main {
   left: 50%;
   bottom: 4%;
   height: 88%;
-  aspect-ratio: 244 / 726;
+  aspect-ratio: 199 / 726;
   transform: translateX(-50%);
 }
 .dollbox img { position: absolute; user-select: none; -webkit-user-drag: none; }

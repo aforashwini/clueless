@@ -27,18 +27,18 @@
   ];
   const sceneUrl = (id) => `assets/scenes/${SCENES.some((s) => s.id === id) ? id : "studio"}.svg`;
 
-  // The doll photo is 244 x 726. Each category gets a box on her body, in
+  // The doll photo is 199 x 726. Each category gets a box on her body, in
   // fractions of the doll's width (cx, w) and height (y, h). A garment is
   // scaled to fit inside its box, then nudged by the item's saved fit.
-  const DOLL = { src: "assets/doll.png", ratio: 244 / 726 };
+  const DOLL = { src: "assets/doll.png", ratio: 199 / 726 };
   const FIT = {
-    top: { cx: 0.5, y: 0.19, w: 0.82, h: 0.3 },
-    bottom: { cx: 0.5, y: 0.385, w: 0.62, h: 0.57 },
-    dress: { cx: 0.5, y: 0.19, w: 0.7, h: 0.72 },
-    outerwear: { cx: 0.5, y: 0.18, w: 1.0, h: 0.52 },
-    shoes: { cx: 0.51, y: 0.925, w: 0.46, h: 0.08, anchor: "bottom" },
-    bag: { cx: 0.88, y: 0.4, w: 0.42, h: 0.24, anchor: "center" },
-    accessory: { cx: 0.5, y: 0.17, w: 0.34, h: 0.12 },
+    top: { cx: 0.5, y: 0.19, w: 1.0, h: 0.3 },
+    bottom: { cx: 0.5, y: 0.385, w: 0.76, h: 0.57 },
+    dress: { cx: 0.5, y: 0.19, w: 0.86, h: 0.72 },
+    outerwear: { cx: 0.5, y: 0.18, w: 1.23, h: 0.52 },
+    shoes: { cx: 0.5, y: 0.925, w: 0.56, h: 0.08, anchor: "bottom" },
+    bag: { cx: 0.92, y: 0.48, w: 0.5, h: 0.22, anchor: "center" },
+    accessory: { cx: 0.5, y: 0.17, w: 0.42, h: 0.12 },
   };
   const layerOrder = (tucked) =>
     tucked
