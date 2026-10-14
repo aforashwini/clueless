@@ -16,6 +16,35 @@
   const SIDE_SLOTS = ["outerwear", "accessory", "bag"];
   const mainSlots = (mode) => (mode === "dress" ? ["dress", "shoes"] : ["top", "bottom", "shoes"]);
 
+  const SCENES = [
+    { id: "studio", label: "Studio" },
+    { id: "beach", label: "Beach" },
+    { id: "city", label: "City" },
+    { id: "picnic", label: "Picnic" },
+    { id: "night", label: "Night out" },
+    { id: "museum", label: "Museum" },
+    { id: "plane", label: "Plane" },
+  ];
+  const sceneUrl = (id) => `assets/scenes/${SCENES.some((s) => s.id === id) ? id : "studio"}.svg`;
+
+  // The doll photo is 244 x 726. Each category gets a box on her body, in
+  // fractions of the doll's width (cx, w) and height (y, h). A garment is
+  // scaled to fit inside its box, then nudged by the item's saved fit.
+  const DOLL = { src: "assets/doll.png", ratio: 244 / 726 };
+  const FIT = {
+    top: { cx: 0.5, y: 0.19, w: 0.82, h: 0.3 },
+    bottom: { cx: 0.5, y: 0.385, w: 0.62, h: 0.57 },
+    dress: { cx: 0.5, y: 0.19, w: 0.7, h: 0.72 },
+    outerwear: { cx: 0.5, y: 0.18, w: 1.0, h: 0.52 },
+    shoes: { cx: 0.51, y: 0.925, w: 0.46, h: 0.08, anchor: "bottom" },
+    bag: { cx: 0.88, y: 0.4, w: 0.42, h: 0.24, anchor: "center" },
+    accessory: { cx: 0.5, y: 0.17, w: 0.34, h: 0.12 },
+  };
+  const layerOrder = (tucked) =>
+    tucked
+      ? ["shoes", "top", "bottom", "dress", "outerwear", "bag", "accessory"]
+      : ["shoes", "bottom", "top", "dress", "outerwear", "bag", "accessory"];
+
   // Background removal model, loaded on first use from a CDN.
   const AI_LIB = "https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/+esm";
   const MAX_SIDE = 1024;
@@ -73,7 +102,7 @@
     view: "closet",
     filter: "all",
     lookTab: "loved",
-    match: { mode: "separates", sel: {}, locked: {} },
+    match: { mode: "separates", sel: {}, locked: {}, scene: "studio", tucked: false, picked: null },
   };
 
   const urlCache = new Map();
@@ -161,6 +190,35 @@
       if (y < h - 1) visit(k + w);
     }
 
+    // Background showing through closed gaps (bag handles, between the legs of
+    // jeans) isn't reachable from the edges, so clear any sizable pocket of it.
+    const minPocket = w * h * 0.0015;
+    const seen = new Uint8Array(w * h);
+    const pocket = [];
+    for (let k0 = 0; k0 < w * h; k0++) {
+      if (bg[k0] || seen[k0] || colorDist(p, k0 * 4, R, G, B) >= tol * 0.8) continue;
+      pocket.length = 0;
+      seen[k0] = 1;
+      stack.push(k0);
+      while (stack.length) {
+        const k = stack.pop();
+        pocket.push(k);
+        const x = k % w;
+        for (const n of [x > 0 ? k - 1 : -1, x < w - 1 ? k + 1 : -1, k - w, k + w]) {
+          if (n < 0 || n >= w * h || bg[n] || seen[n] || colorDist(p, n * 4, R, G, B) >= tol * 0.8) continue;
+          seen[n] = 1;
+          stack.push(n);
+        }
+      }
+      if (pocket.length > minPocket) for (const k of pocket) bg[k] = 1;
+    }
+
+    // If almost everything matched the background (white tee on a white bed),
+    // there's nothing sensible to keep.
+    let cleared = 0;
+    for (let k = 0; k < w * h; k++) cleared += bg[k];
+    if (cleared > w * h * 0.997) return null;
+
     for (let k = 0; k < w * h; k++) {
       if (bg[k]) { p[k * 4 + 3] = 0; continue; }
       // Soften the edge a little so cutouts don't look jagged.
@@ -238,10 +296,16 @@
         method = "plain";
       }
     }
-    if (method === "plain") cut = cutoutPlain(canvasFrom(base, MAX_SIDE), tol);
+    if (method === "plain") {
+      cut = cutoutPlain(canvasFrom(base, MAX_SIDE), tol);
+      if (!cut) {
+        toast("Couldn't spot the piece. Try a contrasting background or the Smart cutout.");
+        method = "none";
+      }
+    }
     if (method === "none") cut = base;
     const final = method === "none" ? cut : cropToContent(cut);
-    return { image: await toBlob(final, "image/png"), original, method };
+    return { image: await toBlob(final, "image/png"), original, method, aspect: final.width / final.height };
   }
 
   /* ---------- UI helpers ---------- */
@@ -305,8 +369,8 @@
     renderCloset();
     for (const job of jobs) {
       try {
-        const { image, original, method: used } = await processImage(job.file, method, 45);
-        const item = { id: job.id, name: job.name, category, notes: "", image, original, method: used, createdAt: Date.now() };
+        const { image, original, method: used, aspect } = await processImage(job.file, method, 45);
+        const item = { id: job.id, name: job.name, category, notes: "", image, original, method: used, aspect, fit: null, createdAt: Date.now() };
         await db.put("items", item);
         state.items.push(item);
       } catch (err) {
@@ -329,7 +393,7 @@
   function openEditor(id) {
     const item = itemById(id);
     if (!item) return;
-    editing = { item, image: item.image, method: item.method };
+    editing = { item, image: item.image, prev: item.image, method: item.method, aspect: item.aspect };
     $("#ed-img").src = urlFor(item);
     $("#ed-name").value = item.name || "";
     $("#ed-cat").value = item.category;
@@ -346,6 +410,7 @@
       const res = await processImage(editing.item.original, method, Number($("#ed-tol").value));
       editing.image = res.image;
       editing.method = res.method;
+      editing.aspect = res.aspect;
       $("#ed-img").src = URL.createObjectURL(res.image);
     } finally {
       box.classList.remove("busy");
@@ -361,7 +426,10 @@
       notes: $("#ed-notes").value.trim(),
       image: editing.image,
       method: editing.method,
+      aspect: editing.aspect,
     });
+    // A new cutout has a different shape, so start its doll fit over.
+    if (editing.image !== editing.prev) item.fit = null;
     await db.put("items", item);
     render();
   }
@@ -411,46 +479,140 @@
     renderMatch(anim);
   }
 
+  // Where a garment sits on the doll, as percentages of the doll box.
+  function placement(item, cat) {
+    const b = FIT[cat];
+    const aspect = item.aspect || 1;
+    const f = item.fit || { x: 0, y: 0, s: 1 };
+    const bw = b.w * DOLL.ratio;
+    let gw, gh;
+    if (aspect > bw / b.h) { gw = bw; gh = bw / aspect; } else { gh = b.h; gw = b.h * aspect; }
+    gw *= f.s;
+    gh *= f.s;
+    const w = gw / DOLL.ratio;
+    const top = b.anchor === "bottom" ? b.y + b.h - gh : b.anchor === "center" ? b.y + (b.h - gh) / 2 : b.y;
+    return { left: (b.cx + f.x - w / 2) * 100, top: (top + f.y) * 100, width: w * 100 };
+  }
+
+  const placeStyle = (p) => `left:${p.left.toFixed(2)}%;top:${p.top.toFixed(2)}%;width:${p.width.toFixed(2)}%`;
+
+  function dollHtml(slots, { scene, tucked, picked, anim = {} } = {}) {
+    const layers = layerOrder(tucked)
+      .map((cat) => {
+        const item = slots[cat] && itemById(slots[cat]);
+        if (!item) return "";
+        const cls = ["garment", picked === item.id && "picked", anim[cat] && "pop"].filter(Boolean).join(" ");
+        return `<img class="${cls}" data-garment="${item.id}" data-cat="${cat}" src="${urlFor(item)}" style="${placeStyle(placement(item, cat))}" alt="${esc(item.name || CAT[cat].one)}" draggable="false">`;
+      })
+      .join("");
+    return `<div class="scene" style="background-image:url('${sceneUrl(scene)}')">
+      <div class="dollbox"><img class="doll" src="${DOLL.src}" alt="" draggable="false">${layers}</div>
+    </div>`;
+  }
+
+  function currentSlots() {
+    const slots = {};
+    for (const cat of [...mainSlots(state.match.mode), ...SIDE_SLOTS]) {
+      const id = currentId(cat);
+      if (id) slots[cat] = id;
+    }
+    return slots;
+  }
+
   function slotHtml(cat, anim) {
     const list = itemsOf(cat);
     const id = currentId(cat);
     const item = id && itemById(id);
     const canStep = list.length + (OPTIONAL.has(cat) ? 1 : 0) > 1;
     const locked = !!state.match.locked[cat];
-    let stage;
+    let thumb;
     if (item) {
-      const from = anim ? `style="--from:${anim * 40}px"` : "";
-      stage = `<img src="${urlFor(item)}" alt="" class="${anim ? "pop" : ""}" ${from}>`;
-    } else if (!list.length) {
-      stage = `<div class="none">no ${esc(CAT[cat].label.toLowerCase())} yet</div>`;
+      const from = anim ? `style="--from:${anim * 30}px"` : "";
+      thumb = `<img src="${urlFor(item)}" alt="" class="${anim ? "pop" : ""}" ${from}>`;
     } else {
-      stage = `<div class="none">none</div>`;
+      thumb = `<span class="none">${list.length ? "none" : "none yet"}</span>`;
     }
     return `<div class="slot ${locked ? "locked" : ""}">
+      <div class="label">${esc(CAT[cat].one.toUpperCase())}</div>
       <button class="arrow" data-step="${cat}" data-dir="-1" ${canStep ? "" : "disabled"} aria-label="Previous ${esc(CAT[cat].one)}">&lsaquo;</button>
-      <div class="view-area">
-        <div class="label">${esc(CAT[cat].one.toUpperCase())}
-          <button class="lock" data-lock="${cat}" title="${locked ? "Unlock" : "Lock while shuffling"}">${locked ? "[locked]" : "[lock]"}</button>
-        </div>
-        <div class="stage">${stage}</div>
-        <div class="itemname">${item ? esc(item.name || " ") : "&nbsp;"}</div>
-      </div>
+      <div class="thumb" title="${item ? esc(item.name) : ""}">${thumb}</div>
       <button class="arrow" data-step="${cat}" data-dir="1" ${canStep ? "" : "disabled"} aria-label="Next ${esc(CAT[cat].one)}">&rsaquo;</button>
+      <button class="lock" data-lock="${cat}" title="${locked ? "Unlock" : "Keep this piece when shuffling"}">${locked ? "locked" : "lock"}</button>
     </div>`;
   }
 
   function renderMatch(anim = {}) {
-    $$(".seg").forEach((b) => b.classList.toggle("active", b.dataset.mode === state.match.mode));
-    $("#rig-main").innerHTML = mainSlots(state.match.mode).map((c) => slotHtml(c, anim[c])).join("");
-    $("#rig-side").innerHTML = SIDE_SLOTS.map((c) => slotHtml(c, anim[c])).join("");
+    const m = state.match;
+    $$(".seg").forEach((b) => b.classList.toggle("active", b.dataset.mode === m.mode));
+    $("#rig").innerHTML = [...mainSlots(m.mode), ...SIDE_SLOTS].map((c) => slotHtml(c, anim[c])).join("");
+    $("#tuck").checked = m.tucked;
+    $("#tuck-row").hidden = m.mode === "dress";
+    const slots = currentSlots();
+    if (m.picked && !Object.values(slots).includes(m.picked)) m.picked = null;
+    $("#doll-stage").innerHTML = dollHtml(slots, { scene: m.scene, tucked: m.tucked, picked: m.picked, anim });
+    $("#scene-picker").innerHTML = SCENES.map(
+      (sc) => `<button class="scene-chip ${sc.id === m.scene ? "active" : ""}" data-scene="${sc.id}" style="background-image:url('${sceneUrl(sc.id)}')"><span>${esc(sc.label)}</span></button>`
+    ).join("");
+    const picked = m.picked && itemById(m.picked);
+    $("#fit-bar").hidden = !picked;
+    $("#fit-hint").hidden = !!picked || !Object.keys(slots).length;
+    if (picked) $("#fit-name").textContent = picked.name || CAT[picked.category].one;
+  }
+
+  /* Dragging and resizing pieces on the doll. Fits are saved per item, so a
+     piece you adjust once sits the same way in every outfit. */
+
+  let drag = null;
+  function startDrag(e) {
+    const el = e.target.closest(".garment");
+    if (!el) {
+      if (state.match.picked) { state.match.picked = null; renderMatch(); }
+      return;
+    }
+    e.preventDefault();
+    const item = itemById(el.dataset.garment);
+    state.match.picked = item.id;
+    const box = el.parentElement.getBoundingClientRect();
+    drag = { el, item, cat: el.dataset.cat, box, x0: e.clientX, y0: e.clientY, fit0: { x: 0, y: 0, s: 1, ...item.fit }, moved: false };
+    el.setPointerCapture(e.pointerId);
+    $$(".garment.picked").forEach((g) => g.classList.remove("picked"));
+    el.classList.add("picked");
+    renderFitBar();
+  }
+  function moveDrag(e) {
+    if (!drag) return;
+    const dx = (e.clientX - drag.x0) / drag.box.width;
+    const dy = (e.clientY - drag.y0) / drag.box.height;
+    if (Math.abs(dx) + Math.abs(dy) > 0.004) drag.moved = true;
+    drag.item.fit = { ...drag.fit0, x: drag.fit0.x + dx, y: drag.fit0.y + dy };
+    drag.el.setAttribute("style", placeStyle(placement(drag.item, drag.cat)));
+  }
+  async function endDrag() {
+    if (!drag) return;
+    const { item, moved } = drag;
+    drag = null;
+    if (moved) await db.put("items", item);
+  }
+  function renderFitBar() {
+    const picked = state.match.picked && itemById(state.match.picked);
+    $("#fit-bar").hidden = !picked;
+    $("#fit-hint").hidden = !!picked;
+    if (picked) $("#fit-name").textContent = picked.name || CAT[picked.category].one;
+  }
+  async function adjustFit(action) {
+    const item = state.match.picked && itemById(state.match.picked);
+    if (!item) return;
+    const f = { x: 0, y: 0, s: 1, ...item.fit };
+    if (action === "bigger") f.s = Math.min(4, f.s * 1.08);
+    if (action === "smaller") f.s = Math.max(0.2, f.s / 1.08);
+    if (action === "done") { state.match.picked = null; renderMatch(); return; }
+    item.fit = action === "reset" ? null : f;
+    await db.put("items", item);
+    renderMatch();
   }
 
   async function saveOutfit(status) {
-    const slots = {};
-    for (const cat of [...mainSlots(state.match.mode), ...SIDE_SLOTS]) {
-      const id = currentId(cat);
-      if (id) slots[cat] = id;
-    }
+    const slots = currentSlots();
     if (!Object.keys(slots).length) {
       toast("Ugh, as if! Add some clothes to your closet first.");
       return;
@@ -461,6 +623,8 @@
       name: $("#outfit-name").value.trim(),
       status,
       slots,
+      scene: state.match.scene,
+      tucked: state.match.mode !== "dress" && state.match.tucked,
       notes: "",
       worn: status === "loved" ? [today] : [],
       createdAt: Date.now(),
@@ -478,16 +642,6 @@
   }
 
   /* ---------- Lookbook ---------- */
-
-  function flatlay(o) {
-    const img = (cat) => {
-      const it = o.slots[cat] && itemById(o.slots[cat]);
-      return it ? `<div class="fl-${cat}"><img src="${urlFor(it)}" alt="${esc(it.name || CAT[cat].one)}"></div>` : "";
-    };
-    const main = (o.slots.dress ? ["dress"] : ["top", "bottom"]).concat("shoes").map(img).join("");
-    const side = SIDE_SLOTS.map(img).join("");
-    return `<div class="flatlay"><div class="col">${main}</div><div class="col">${side}</div></div>`;
-  }
 
   const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
@@ -512,7 +666,10 @@
             ? `<button class="btn" data-act="wore" data-id="${o.id}">Wore it again today</button>`
             : `<button class="btn primary" data-act="wore" data-id="${o.id}">Wore it &amp; loved it</button>`;
         return `<article class="look">
-          ${flatlay(o)}
+          <div class="look-stage">${dollHtml(o.slots, { scene: o.scene, tucked: o.tucked })}</div>
+          <label class="scene-select">Scene
+            <select data-scene-for="${o.id}">${SCENES.map((sc) => `<option value="${sc.id}" ${sc.id === (o.scene || "studio") ? "selected" : ""}>${esc(sc.label)}</option>`).join("")}</select>
+          </label>
           <h3>${esc(o.name || (o.status === "loved" ? "A favorite look" : "An idea to try"))}</h3>
           <div class="meta">${meta}</div>
           <textarea data-notes="${o.id}" placeholder="Notes: where you wore it, what to change...">${esc(o.notes)}</textarea>
@@ -549,6 +706,9 @@
       state.match.mode = o.slots.dress ? "dress" : "separates";
       state.match.sel = {};
       for (const cat of [...mainSlots(state.match.mode), ...SIDE_SLOTS]) state.match.sel[cat] = o.slots[cat] || null;
+      state.match.scene = o.scene || "studio";
+      state.match.tucked = !!o.tucked;
+      state.match.picked = null;
       $("#outfit-name").value = o.name ? o.name + " (remix)" : "";
       setView("match");
     } else if (act === "delete") {
@@ -596,6 +756,18 @@
 
   async function loadAll() {
     [state.items, state.outfits] = await Promise.all([db.all("items"), db.all("outfits")]);
+    // Older items were saved before the doll existed and don't know their shape yet.
+    for (const item of state.items) {
+      if (item.aspect) continue;
+      try {
+        const bmp = await createImageBitmap(item.image);
+        item.aspect = bmp.width / bmp.height;
+        bmp.close?.();
+        await db.put("items", item);
+      } catch {
+        item.aspect = 1;
+      }
+    }
   }
 
   /* ---------- Wiring ---------- */
@@ -640,11 +812,30 @@
       const b = e.target.closest("[data-mode]");
       if (b) { state.match.mode = b.dataset.mode; renderMatch(); }
     };
-    $(".rig").onclick = (e) => {
+    $("#rig").onclick = (e) => {
       const s = e.target.closest("[data-step]");
       if (s) return step(s.dataset.step, Number(s.dataset.dir));
       const l = e.target.closest("[data-lock]");
       if (l) { state.match.locked[l.dataset.lock] = !state.match.locked[l.dataset.lock]; renderMatch(); }
+    };
+    $("#scene-picker").onclick = (e) => {
+      const b = e.target.closest("[data-scene]");
+      if (b) { state.match.scene = b.dataset.scene; try { localStorage.setItem("cc-scene", b.dataset.scene); } catch {} renderMatch(); }
+    };
+    $("#tuck").onchange = (e) => { state.match.tucked = e.target.checked; renderMatch(); };
+    const stage = $("#doll-stage");
+    stage.addEventListener("pointerdown", startDrag);
+    stage.addEventListener("pointermove", moveDrag);
+    stage.addEventListener("pointerup", endDrag);
+    stage.addEventListener("pointercancel", endDrag);
+    stage.addEventListener("wheel", (e) => {
+      if (!e.target.closest(".garment.picked")) return;
+      e.preventDefault();
+      adjustFit(e.deltaY < 0 ? "bigger" : "smaller");
+    }, { passive: false });
+    $("#fit-bar").onclick = (e) => {
+      const b = e.target.closest("[data-fit]");
+      if (b) adjustFit(b.dataset.fit);
     };
     $("#shuffle").onclick = shuffle;
     $("#save-loved").onclick = () => saveOutfit("loved");
@@ -657,6 +848,14 @@
       if (a) lookAction(a.dataset.act, a.dataset.id);
     });
     $("#look-grid").addEventListener("change", async (e) => {
+      const sceneFor = e.target.dataset.sceneFor;
+      if (sceneFor) {
+        const o = state.outfits.find((x) => x.id === sceneFor);
+        o.scene = e.target.value;
+        await db.put("outfits", o);
+        e.target.closest(".look").querySelector(".scene").style.backgroundImage = `url('${sceneUrl(o.scene)}')`;
+        return;
+      }
       const id = e.target.dataset.notes;
       const o = id && state.outfits.find((x) => x.id === id);
       if (o) { o.notes = e.target.value; await db.put("outfits", o); }
@@ -683,6 +882,7 @@
       console.error(err);
       toast("This browser is blocking storage, so nothing will be saved");
     }
+    try { state.match.scene = localStorage.getItem("cc-scene") || "studio"; } catch {}
     let view = "closet";
     try { view = localStorage.getItem("cc-view") || view; } catch {}
     if (!state.items.length) view = "closet";

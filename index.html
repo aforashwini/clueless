@@ -58,13 +58,27 @@
           <span class="title">CLOSET.EXE</span>
         </div>
         <div class="screen">
-          <div class="mode">
-            <button class="seg" data-mode="separates">Separates</button>
-            <button class="seg" data-mode="dress">Dress</button>
-          </div>
-          <div class="rig">
-            <div id="rig-main" class="rig-col"></div>
-            <div id="rig-side" class="rig-col side"></div>
+          <div class="match-layout">
+            <div class="stage-col">
+              <div id="doll-stage" class="doll-stage"></div>
+              <p id="fit-hint" class="fit-hint">Tap a piece on the doll to move or resize it. She remembers the fit.</p>
+              <div id="fit-bar" class="fit-bar" hidden>
+                <span>Fitting <b id="fit-name"></b></span>
+                <button class="btn pixel small" data-fit="smaller" aria-label="Smaller">&minus;</button>
+                <button class="btn pixel small" data-fit="bigger" aria-label="Bigger">+</button>
+                <button class="btn pixel small" data-fit="reset">Reset</button>
+                <button class="btn pixel small pink" data-fit="done">Done</button>
+              </div>
+              <div id="scene-picker" class="scene-picker"></div>
+            </div>
+            <div class="controls">
+              <div class="mode">
+                <button class="seg" data-mode="separates">Separates</button>
+                <button class="seg" data-mode="dress">Dress</button>
+              </div>
+              <div id="rig" class="rig"></div>
+              <label id="tuck-row" class="tuck"><input type="checkbox" id="tuck"> Tuck top in</label>
+            </div>
           </div>
           <div class="screen-actions">
             <button id="shuffle" class="btn pixel">Shuffle</button>

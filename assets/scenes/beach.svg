@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5ec8f2"/><stop offset="1" stop-color="#c9f1ff"/></linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1f9fd1"/><stop offset="1" stop-color="#5fd6d8"/></linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe3a8"/><stop offset="1" stop-color="#f5c97a"/></linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="url(#sky)"/>
+  <circle cx="480" cy="120" r="60" fill="#fff3a6"/>
+  <circle cx="480" cy="120" r="44" fill="#ffd84a"/>
+  <g fill="#fff" opacity=".9">
+    <ellipse cx="120" cy="110" rx="60" ry="18"/><ellipse cx="160" cy="96" rx="40" ry="20"/>
+    <ellipse cx="330" cy="190" rx="50" ry="14"/><ellipse cx="360" cy="180" rx="30" ry="15"/>
+  </g>
+  <rect y="440" width="600" height="160" fill="url(#sea)"/>
+  <g stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".6">
+    <path d="M40 480 q20 -8 40 0"/><path d="M420 470 q20 -8 40 0"/><path d="M250 520 q20 -8 40 0"/><path d="M520 540 q20 -8 40 0"/>
+  </g>
+  <path d="M0 590 Q150 560 300 585 T600 580 V800 H0Z" fill="url(#sand)"/>
+  <path d="M0 590 Q150 560 300 585 T600 580" fill="none" stroke="#fff" stroke-width="8" opacity=".7"/>
+  <!-- palm -->
+  <path d="M70 700 C80 600 70 480 40 380" stroke="#8a5a2b" stroke-width="18" fill="none" stroke-linecap="round"/>
+  <g fill="#2fa84f">
+    <path d="M40 380 C0 360 -30 380 -40 410 C0 390 20 390 40 380Z"/>
+    <path d="M40 380 C60 330 110 330 140 350 C100 350 70 360 40 380Z"/>
+    <path d="M40 380 C30 330 -10 310 -40 320 C0 335 20 350 40 380Z"/>
+    <path d="M40 380 C90 380 120 410 130 440 C100 415 70 400 40 380Z"/>
+    <path d="M40 380 C20 420 10 450 15 480 C25 440 30 410 40 380Z"/>
+  </g>
+  <!-- umbrella -->
+  <line x1="520" y1="430" x2="500" y2="700" stroke="#fff" stroke-width="6"/>
+  <path d="M430 450 Q520 370 610 450 Z" fill="#ff4fa3"/>
+  <path d="M460 450 Q520 380 520 450Z M520 450 Q540 380 580 450Z" fill="#fff" opacity=".85"/>
+  <!-- towel -->
+  <path d="M440 730 L590 700 L600 760 L450 790Z" fill="#ffd84a"/>
+  <path d="M470 724 L480 784 M510 716 L520 777 M550 708 L560 769" stroke="#ff4fa3" stroke-width="8"/>
+  <!-- shells -->
+  <circle cx="140" cy="760" r="7" fill="#fff"/><circle cx="370" cy="740" r="5" fill="#ffc3d9"/>
+</svg>

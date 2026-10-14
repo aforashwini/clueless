@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#140a2e"/><stop offset="1" stop-color="#3b1660"/></linearGradient>
+    <radialGradient id="spot" cx=".5" cy="0" r=".9"><stop offset="0" stop-color="#ff4fa3" stop-opacity=".45"/><stop offset="1" stop-color="#ff4fa3" stop-opacity="0"/></radialGradient>
+    <pattern id="tiles" width="60" height="30" patternUnits="userSpaceOnUse"><rect width="60" height="30" fill="#2a0f45"/><rect width="30" height="15" fill="#4b1d7a"/><rect x="30" y="15" width="30" height="15" fill="#4b1d7a"/></pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="600" height="800" fill="url(#bg)"/>
+  <path d="M300 0 L120 680 H480Z" fill="url(#spot)"/>
+  <!-- string lights -->
+  <path d="M0 60 Q150 130 300 70 T600 80" stroke="#6b4f8f" stroke-width="2" fill="none"/>
+  <g fill="#ffe27a" filter="url(#glow)">
+    <circle cx="40" cy="78" r="5"/><circle cx="100" cy="98" r="5"/><circle cx="160" cy="104" r="5"/><circle cx="220" cy="94" r="5"/><circle cx="280" cy="76" r="5"/>
+    <circle cx="340" cy="66" r="5"/><circle cx="400" cy="70" r="5"/><circle cx="460" cy="84" r="5"/><circle cx="520" cy="90" r="5"/><circle cx="580" cy="82" r="5"/>
+  </g>
+  <!-- disco ball -->
+  <line x1="300" y1="0" x2="300" y2="40" stroke="#aaa" stroke-width="2"/>
+  <circle cx="300" cy="80" r="40" fill="#c9c9d9"/>
+  <g stroke="#7a7a92" stroke-width="2" fill="none"><path d="M260 80 h80 M265 62 h70 M265 98 h70 M272 46 h56 M272 114 h56"/><ellipse cx="300" cy="80" rx="16" ry="40"/><ellipse cx="300" cy="80" rx="30" ry="40"/></g>
+  <circle cx="288" cy="66" r="6" fill="#fff"/>
+  <!-- neon signs -->
+  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <text x="70" y="250" font-family="Pacifico, cursive" font-size="54" fill="none" stroke="#ff4fa3" stroke-width="3">as if!</text>
+    <path d="M470 200 l20 -40 l20 40 l-40 -26 h40z" stroke="#7dffb5" stroke-width="4"/>
+    <path d="M60 330 h0 M450 300 q30 -30 60 0 q-30 30 -60 0" stroke="#5ed0ff" stroke-width="4"/>
+  </g>
+  <!-- bar silhouettes -->
+  <rect x="0" y="420" width="140" height="260" fill="#22103d"/>
+  <rect x="460" y="420" width="140" height="260" fill="#22103d"/>
+  <g fill="#ff4fa3" opacity=".7"><rect x="20" y="450" width="20" height="40" rx="4"/><rect x="60" y="440" width="16" height="50" rx="4"/><rect x="500" y="450" width="18" height="40" rx="4"/><rect x="540" y="444" width="16" height="46" rx="4"/></g>
+  <rect x="0" y="500" width="140" height="10" fill="#5a2b8a"/><rect x="460" y="500" width="140" height="10" fill="#5a2b8a"/>
+  <!-- floor -->
+  <rect y="680" width="600" height="120" fill="url(#tiles)"/>
+  <ellipse cx="300" cy="745" rx="170" ry="34" fill="#ff4fa3" opacity=".25"/>
+  <!-- sparkles -->
+  <g fill="#fff"><circle cx="180" cy="160" r="2"/><circle cx="430" cy="170" r="2"/><circle cx="520" cy="360" r="2"/><circle cx="90" cy="380" r="2"/><circle cx="380" cy="300" r="2"/><circle cx="220" cy="350" r="2"/></g>
+</svg>

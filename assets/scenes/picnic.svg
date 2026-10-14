@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd3ff"/><stop offset="1" stop-color="#e6f7ff"/></linearGradient>
+    <pattern id="gingham" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#fff"/><rect width="20" height="40" fill="#ff7bb8" opacity=".55"/><rect width="40" height="20" fill="#ff7bb8" opacity=".55"/></pattern>
+  </defs>
+  <rect width="600" height="800" fill="url(#sky)"/>
+  <g fill="#fff"><ellipse cx="110" cy="130" rx="70" ry="22"/><ellipse cx="150" cy="112" rx="44" ry="26"/><ellipse cx="450" cy="90" rx="60" ry="18"/><ellipse cx="480" cy="76" rx="36" ry="20"/></g>
+  <path d="M0 470 Q160 400 330 460 T600 430 V800 H0Z" fill="#9ad66b"/>
+  <path d="M0 540 Q200 490 400 540 T600 520 V800 H0Z" fill="#6cc04a"/>
+  <!-- tree -->
+  <rect x="470" y="330" width="34" height="230" rx="10" fill="#8a5a2b"/>
+  <g fill="#3f9e3a"><circle cx="487" cy="300" r="85"/><circle cx="420" cy="340" r="60"/><circle cx="555" cy="345" r="60"/><circle cx="480" cy="230" r="60"/></g>
+  <g fill="#ff4f6d"><circle cx="440" cy="300" r="7"/><circle cx="520" cy="270" r="7"/><circle cx="500" cy="350" r="7"/><circle cx="560" cy="330" r="7"/></g>
+  <!-- blanket -->
+  <path d="M30 690 L300 640 L600 680 L560 800 L0 800Z" fill="url(#gingham)"/>
+  <!-- basket -->
+  <path d="M70 690 h120 l-12 70 h-96z" fill="#c98b4a"/>
+  <path d="M70 690 h120" stroke="#9b6532" stroke-width="10"/>
+  <path d="M90 690 q40 -70 80 0" stroke="#9b6532" stroke-width="8" fill="none"/>
+  <path d="M85 712 h90 M88 734 h84" stroke="#9b6532" stroke-width="3"/>
+  <!-- flowers -->
+  <g><circle cx="40" cy="600" r="6" fill="#fff"/><circle cx="250" cy="580" r="6" fill="#ffd84a"/><circle cx="380" cy="600" r="6" fill="#fff"/><circle cx="580" cy="610" r="6" fill="#ffd84a"/><circle cx="150" cy="620" r="5" fill="#ff7bb8"/></g>
+  <!-- lemonade -->
+  <rect x="470" y="700" width="34" height="50" rx="4" fill="#fff6a6" stroke="#fff" stroke-width="4"/>
+  <circle cx="505" cy="705" r="9" fill="#ffd84a"/>
+</svg>
